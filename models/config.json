@@ -1,5 +1,5 @@
 {
-    "max_len": 65,
+    "max_len": 105,
     "embedding_size": 20,
     "hidden_size": 100,
     "input_dropout_p": 0,

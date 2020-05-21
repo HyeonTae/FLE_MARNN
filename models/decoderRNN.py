@@ -99,9 +99,9 @@ class DecoderRNN(BaseRNN):
             embedded = self.embedding(input_var)
             if self.position_embedding is not None:
                 if self.pos_add == 'cat':
-                    embedded = torch.cat((embedded, input_pos), dim=2)
+                    embedded = torch.cat((embedded, posemb), dim=2)
                 else:
-                    embedded += input_pos
+                    embedded += posemb
             output, hidden = self.rnn(embedded, hidden)
         else:
             memory = self.init_memory(batch_size)
@@ -109,10 +109,11 @@ class DecoderRNN(BaseRNN):
             decoder_action = torch.tensor(()).to(device)
             for j in range(output_size):
                 embedded = inpemb[:, j, :].clone().unsqueeze(1)
-                if self.pos_add == 'cat':
-                    embedded = torch.cat((embedded, posemb[:, j, :].clone().unsqueeze(1)), dim=2)
-                elif self.pos_add == 'add':
-                    embedded += posemb[:, j, :].clone().unsqueeze(1)
+                if self.position_embedding is not None:
+                    if self.pos_add == 'cat':
+                        embedded = torch.cat((embedded, posemb[:, j, :].clone().unsqueeze(1)), dim=2)
+                    elif self.pos_add == 'add':
+                        embedded += posemb[:, j, :].clone().unsqueeze(1)
 
                 if j == 0:
                     if self.s_rnn == "gru":
@@ -308,7 +309,8 @@ class DecoderRNN(BaseRNN):
                 step_output = decoder_output.squeeze(1)
                 symbols = decode(di, step_output, step_attn)
                 decoder_input = symbols
-                decoder_action = torch.cat((decoder_action, action), dim=1)
+                if action is not None:
+                    decoder_action = torch.cat((decoder_action, action), dim=1)
 
         if decoder_action is not None:
             ret_dict[DecoderRNN.KEY_DECODER_ACTION] = decoder_action
